@@ -15,8 +15,8 @@ from .auth import hash_password
 from .db import Base, SessionLocal, engine, now, today
 from .meetings import demo_link
 from .models import (
-    ADMIN, BLENDED, COUNSELEE, COUNSELOR, IN_PROGRESS, NOT_STARTED, OFFLINE, ONLINE, SRC_ASSIGNED, SRC_SELF,
-    SRC_SUGGESTED, SUGGESTED, Course, CourseMaterial, Enrollment, MaterialProgress, Room, RoomParticipant, User,
+    ADMIN, BLENDED, COUNSELEE, COUNSELOR, COURSERA, IN_PROGRESS, NOT_STARTED, OFFLINE, ONLINE, SRC_ASSIGNED, SRC_SELF,
+    SRC_SUGGESTED, UDEMY, SUGGESTED, Course, CourseMaterial, Enrollment, MaterialProgress, Room, RoomParticipant, User,
 )
 from .services import complete_enrollment, log
 
@@ -376,7 +376,8 @@ class Seeder:
     def fill_year(self, u: User, year: int, goal: float, exclude: set[str]):
         """Lengkapi course selesai dalam satu tahun hingga mendekati target jam `goal`."""
         limit = date(year, 12, 20) if year < self.year else self.ref - timedelta(days=4)
-        pool = [c for c in self.courses.values() if c.is_published and c.code not in exclude]
+        pool = [c for c in self.courses.values()
+                if c.is_published and c.provider == "internal" and c.code not in exclude]
         self.rng.shuffle(pool)
         # Course wajib (compliance) diutamakan.
         pool.sort(key=lambda c: not c.is_mandatory)
@@ -578,6 +579,56 @@ class Seeder:
             seq[y] = seq.get(y, 0) + 1
             e.certificate_no = f"NMA/{y}/{seq[y]:05d}"
 
+    def external_courses(self):
+        """Katalog contoh Udemy & Coursera + skenario progres (jam hanya dihitung saat selesai)."""
+        from . import learning_providers as lp
+        from .routers.integrations import apply_external, upsert_catalog
+
+        for p in (UDEMY, COURSERA):
+            upsert_catalog(self.db, p, lp._sample_catalog(p), True, self.admin)
+        ext = {c.external_id: c for c in self.db.query(Course).filter(Course.provider != "internal")}
+        self.courses.update({c.code: c for c in ext.values()})
+        ref = self.ref
+
+        def done(email, ext_id, on, source=SRC_ASSIGNED):
+            u = self.u(email)
+            c = ext[ext_id]
+            assigner = None if source == SRC_SELF else (self.admin if u.role == COUNSELOR else self.counselor_of(u))
+            e = Enrollment(user_id=u.id, course_id=c.id, source=source, status=NOT_STARTED,
+                           assigned_by_id=assigner.id if assigner else None,
+                           created_at=_dt(on - timedelta(days=30)), started_at=_dt(on - timedelta(days=25)))
+            self.db.add(e)
+            self._log_created(e, u, c, assigner, e.created_at)
+            for pct, back in ((35, 18), (70, 9)):
+                apply_external(self.db, u, c, pct, False, last_activity=_dt(on - timedelta(days=back), 20),
+                               actor_id=u.id)
+            apply_external(self.db, u, c, 100, True, completed_at=_dt(on, 21), last_activity=_dt(on, 21),
+                           certificate_url=f"{c.external_url}#sertifikat-contoh", actor_id=u.id)
+
+        def partial(email, ext_id, pct, last_days, due_in=None, source=SRC_ASSIGNED, note=""):
+            u = self.u(email)
+            e = self.active(u, ext[ext_id], due_in, source=source, note=note)
+            self.db.flush()
+            if pct:
+                apply_external(self.db, u, ext[ext_id], pct, False,
+                               last_activity=_dt(ref - timedelta(days=last_days), 19), actor_id=u.id)
+            return e
+
+        prev = self.year - 1
+        done("member", "UDM-1002", date(prev, 10, 14), SRC_SELF)
+        # Contoh kasus: course 10 jam, berhenti di tengah (40%) → 0 jam sampai selesai.
+        partial("member", "CRS-2004", 40, 23, 50, note="Pendalaman customer experience untuk klien call center.")
+        done("counselor", "UDM-1006", date(self.year, 3, 22))
+        done("eka", "UDM-1003", date(self.year, 5, 8), SRC_SELF)
+        done("kartika", "CRS-2001", date(self.year, 7, 19), SRC_SELF)
+        done("hendra", "CRS-2005", date(self.year, 8, 27))
+        partial("lukman", "UDM-1005", 65, 2, None, SRC_SELF)
+        partial("budi", "CRS-2003", 80, 5, 30, note="Persiapan peran supervisor.")
+        partial("joko", "UDM-1004", 15, 41, -6, note="Wajib sebelum memegang project event mandiri.")
+        partial("intan", "CRS-2002", 55, 9, 75)
+        partial("dimas", "UDM-1001", 0, 0, None, source=SRC_SUGGESTED)
+        self.db.flush()
+
     def run(self):
         self.make_users()
         self.make_courses()
@@ -585,6 +636,7 @@ class Seeder:
         self.history()
         self.team_stories()
         self.upcoming_rooms()
+        self.external_courses()
         self.renumber_certificates()
         self.db.commit()
 

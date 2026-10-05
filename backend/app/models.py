@@ -38,6 +38,12 @@ SRC_SELF = "self"           # daftar mandiri dari katalog
 
 PLATFORMS = ("zoom", "teams", "gmeet", "other", "offline")
 
+# Sumber course: dibuat sendiri oleh admin, atau course eksternal dari platform belajar.
+INTERNAL = "internal"
+UDEMY = "udemy"
+COURSERA = "coursera"
+PROVIDERS = (INTERNAL, UDEMY, COURSERA)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -77,6 +83,10 @@ class Course(Base):
     is_mandatory: Mapped[bool] = mapped_column(Boolean, default=False)
     is_published: Mapped[bool] = mapped_column(Boolean, default=True)
     cover_color: Mapped[str] = mapped_column(String(20), default="#0A84FF")
+    # Course eksternal: progres & penyelesaian datang dari platform (Udemy Business / Coursera for Business).
+    provider: Mapped[str] = mapped_column(String(20), default=INTERNAL, index=True)
+    external_id: Mapped[str | None] = mapped_column(String(120), nullable=True, index=True)
+    external_url: Mapped[str] = mapped_column(String(500), default="")
     created_by_id: Mapped[str | None] = mapped_column(ForeignKey("users.id"), nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
 
@@ -114,6 +124,12 @@ class Enrollment(Base):
     attended: Mapped[bool] = mapped_column(Boolean, default=False)
     hours_earned: Mapped[float] = mapped_column(Float, default=0)
     certificate_no: Mapped[str | None] = mapped_column(String(40), nullable=True)
+    # Progres dari platform eksternal (informasi saja — jam TIDAK dihitung sebelum selesai).
+    external_progress: Mapped[int] = mapped_column(Integer, default=0)
+    external_completed: Mapped[bool] = mapped_column(Boolean, default=False)
+    external_certificate_url: Mapped[str] = mapped_column(String(500), default="")
+    external_last_activity: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
+    external_synced_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     created_at: Mapped[datetime] = mapped_column(DateTime, default=now)
     started_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)
     completed_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

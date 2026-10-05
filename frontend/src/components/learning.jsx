@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Award, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight, Clock, MapPin, TrendingUp, Video } from "lucide-react";
 import { BULAN_PANJANG, HARI, fmtDate, fmtHours, fmtTime, monthShort, parse, relDays, toInputDate } from "@/lib/format";
-import { Avatar, Badge, Card, CardHeader, DeadlineBadge, Empty, ModeBadge, PACE, PaceBadge, PlatformBadge, Progress, SOURCE, StatusBadge, cx } from "./ui";
+import { Avatar, Badge, Card, CardHeader, DeadlineBadge, ProviderBadge, Empty, ModeBadge, PACE, PaceBadge, PlatformBadge, Progress, SOURCE, StatusBadge, cx } from "./ui";
 
 // ------------------------------------------------------------------ Jam & target tahunan
 export function HoursRing({ earned, target, size = 148 }) {
@@ -52,6 +52,7 @@ export function HoursCard({ hours, title = "Target Jam Pelatihan" }) {
               <div className="absolute -top-1 h-4 w-0.5 bg-slate-500" style={{ left: `${expectedPct}%` }} title="Seharusnya sampai hari ini" />
             </div>
             <p className="mt-1.5 text-[11px] text-slate-500">
+              Jam dihitung penuh sesuai durasi resmi saat course selesai (badge terbit) atau kelas offline selesai; progres parsial tidak dihitung.
               Garis = jalur ideal hari ini ({fmtHours(hours.expected_to_date)}).
               {hours.planned > 0 && hours.remaining > 0 && hours.planned >= hours.remaining && " Course aktif cukup untuk menutup target."}
             </p>
@@ -258,6 +259,7 @@ export function EnrollmentCard({ e, actions }) {
       <div className="h-1.5" style={{ background: e.course.cover_color }} />
       <div className="flex flex-1 flex-col p-4">
         <div className="flex flex-wrap items-center gap-1.5">
+          <ProviderBadge provider={e.course.provider} hideInternal />
           <ModeBadge mode={e.course.delivery_mode} />
           <StatusBadge status={e.status} />
           {e.course.is_mandatory && <Badge tone="dark">Wajib</Badge>}

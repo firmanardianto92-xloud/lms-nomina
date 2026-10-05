@@ -9,7 +9,7 @@ import { SectionCard } from "@/components/learning";
 const EMPTY = {
   code: "", title: "", summary: "", description: "", category: "Soft Skill", delivery_mode: "online", duration_hours: 4,
   level: "Dasar", instructor: "", skills: [], badge_name: "", has_certificate: true, is_mandatory: false, is_published: true,
-  cover_color: "#0A84FF",
+  cover_color: "#0A84FF", provider: "internal", external_id: "", external_url: "",
 };
 const KINDS = [["article", "Artikel / teks"], ["video", "Video"], ["pdf", "PDF"], ["slide", "Slide"], ["link", "Link eksternal"], ["file", "File lain"]];
 
@@ -52,13 +52,22 @@ export default function AdminCourseEdit() {
             <Field label="Kode"><Input value={f.code} onChange={set("code")} placeholder="NMA-XXX-000" /></Field>
             <Field label="Judul" className="sm:col-span-2"><Input value={f.title} onChange={set("title")} /></Field>
           </div>
+          <div className="grid gap-4 sm:grid-cols-3">
+            <Field label="Sumber course" hint="Udemy/Coursera: selesai ditentukan platform">
+              <Select value={f.provider} onChange={set("provider")}><option value="internal">Dibuat sendiri (Nomina)</option><option value="udemy">Udemy</option><option value="coursera">Coursera</option></Select>
+            </Field>
+            {f.provider !== "internal" && <>
+              <Field label="Link course"><Input value={f.external_url} onChange={set("external_url")} placeholder="https://…" /></Field>
+              <Field label="ID di platform"><Input value={f.external_id || ""} onChange={set("external_id")} /></Field>
+            </>}
+          </div>
           <Field label="Ringkasan"><Input value={f.summary} onChange={set("summary")} /></Field>
           <Field label="Deskripsi"><Textarea value={f.description} onChange={set("description")} /></Field>
           <div className="grid gap-4 sm:grid-cols-3">
             <Field label="Mode" hint="Online: lulus via materi · Offline: via absensi · Blended: keduanya">
               <Select value={f.delivery_mode} onChange={set("delivery_mode")}><option value="online">Online</option><option value="offline">Offline</option><option value="blended">Blended</option></Select>
             </Field>
-            <Field label="Durasi (jam)" hint="Dihitung ke target tahunan"><Input type="number" step="0.5" min="0.5" value={f.duration_hours} onChange={set("duration_hours")} /></Field>
+            <Field label="Durasi resmi (jam)" hint="Dihitung penuh saat course selesai"><Input type="number" step="0.5" min="0.5" value={f.duration_hours} onChange={set("duration_hours")} /></Field>
             <Field label="Level"><Select value={f.level} onChange={set("level")}><option>Dasar</option><option>Menengah</option><option>Lanjutan</option></Select></Field>
             <Field label="Kategori"><Input value={f.category} onChange={set("category")} list="cats" /></Field>
             <Field label="Instruktur"><Input value={f.instructor} onChange={set("instructor")} /></Field>
@@ -75,7 +84,7 @@ export default function AdminCourseEdit() {
             </div>
           </div>
         </Card>
-        {!isNew && data && <Materials course={data} />}
+        {!isNew && data && data.provider === "internal" && <Materials course={data} />}
       </div>
     </>
   );

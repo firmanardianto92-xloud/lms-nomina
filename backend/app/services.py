@@ -8,7 +8,7 @@ from sqlalchemy.orm import Session
 
 from .db import now, today
 from .models import (
-    ACTIVE_STATUSES, BLENDED, COMPLETED, IN_PROGRESS, OFFLINE, ONLINE, Activity, Course, Enrollment,
+    ACTIVE_STATUSES, BLENDED, COMPLETED, IN_PROGRESS, INTERNAL, OFFLINE, ONLINE, Activity, Course, Enrollment,
     Room, RoomParticipant, User,
 )
 
@@ -25,11 +25,15 @@ def log(db: Session, user_id: str, kind: str, message: str, actor_id: str | None
 
 # ---------------------------------------------------------------- completion rules
 def requirements(course: Course) -> dict:
-    """online → semua materi selesai; offline → hadir di kelas; blended → keduanya."""
+    """online → semua materi selesai; offline → hadir di kelas; blended → keduanya.
+    Course Udemy/Coursera → dinyatakan selesai oleh platformnya (progres parsial tidak dihitung)."""
+    if course.provider != INTERNAL:
+        return {"materials": False, "attendance": False, "external": True}
     has_materials = len(course.materials) > 0
     return {
         "materials": course.delivery_mode in (ONLINE, BLENDED) and has_materials,
         "attendance": course.delivery_mode in (OFFLINE, BLENDED) or not has_materials,
+        "external": False,
     }
 
 
@@ -37,6 +41,9 @@ def progress_pct(e: Enrollment) -> int:
     if e.status == COMPLETED:
         return 100
     req = requirements(e.course)
+    if req["external"]:
+        # Maks. 99% sampai platform menyatakan selesai.
+        return min(e.external_progress, 99)
     parts = []
     if req["materials"]:
         total = len(e.course.materials)
@@ -48,6 +55,8 @@ def progress_pct(e: Enrollment) -> int:
 
 def requirements_met(e: Enrollment) -> bool:
     req = requirements(e.course)
+    if req["external"]:
+        return e.external_completed
     if req["materials"] and len(e.progress) < len(e.course.materials):
         return False
     if req["attendance"] and not e.attended:
@@ -80,7 +89,7 @@ def refresh_status(db: Session, e: Enrollment, actor_id: str | None = None) -> N
         return
     if requirements_met(e):
         complete_enrollment(db, e, actor_id=actor_id)
-    elif e.progress or e.attended:
+    elif e.progress or e.attended or e.external_progress > 0:
         if e.status != IN_PROGRESS:
             e.status = IN_PROGRESS
             e.started_at = e.started_at or now()
@@ -196,6 +205,7 @@ def course_out(c: Course, full: bool = False) -> dict:
         "instructor": c.instructor, "skills": c.skills or [], "badge_name": c.badge_name,
         "has_certificate": c.has_certificate, "is_mandatory": c.is_mandatory,
         "is_published": c.is_published, "cover_color": c.cover_color,
+        "provider": c.provider, "external_id": c.external_id, "external_url": c.external_url,
         "material_count": len(c.materials), "requirements": requirements(c),
     }
     if full:
@@ -211,6 +221,10 @@ def enrollment_out(e: Enrollment, ref: date | None = None, with_user: bool = Fal
         "due_date": e.due_date.isoformat() if e.due_date else None,
         "note": e.note, "attended": e.attended, "hours_earned": e.hours_earned,
         "certificate_no": e.certificate_no, "progress": progress_pct(e),
+        "external": {"progress": e.external_progress, "completed": e.external_completed,
+                     "certificate_url": e.external_certificate_url,
+                     "last_activity": iso(e.external_last_activity), "synced_at": iso(e.external_synced_at)}
+        if e.course.provider != INTERNAL else None,
         "completed_material_ids": [p.material_id for p in e.progress],
         "created_at": iso(e.created_at), "started_at": iso(e.started_at), "completed_at": iso(e.completed_at),
         "deadline": deadline_info(e, ref),

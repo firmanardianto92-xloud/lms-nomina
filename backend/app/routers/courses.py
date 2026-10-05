@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from ..auth import current_user, require_roles
 from ..db import UPLOAD_DIR, get_db
-from ..models import ADMIN, MODES, Course, CourseMaterial, Enrollment, MaterialProgress, User
+from ..models import ADMIN, MODES, PROVIDERS, Course, CourseMaterial, Enrollment, MaterialProgress, User
 from ..services import course_out, material_out
 
 router = APIRouter(tags=["courses"])
@@ -22,7 +22,8 @@ ALLOWED_EXT = {".pdf", ".ppt", ".pptx", ".doc", ".docx", ".xls", ".xlsx", ".mp4"
 
 @router.get("/courses")
 def list_courses(mode: str | None = None, category: str | None = None, q: str | None = None,
-                 include_drafts: bool = False, user: User = Depends(current_user), db: Session = Depends(get_db)):
+                 provider: str | None = None, include_drafts: bool = False,
+                 user: User = Depends(current_user), db: Session = Depends(get_db)):
     stmt = select(Course).order_by(Course.category, Course.title)
     if not (include_drafts and user.role == ADMIN):
         stmt = stmt.where(Course.is_published.is_(True))
@@ -30,6 +31,8 @@ def list_courses(mode: str | None = None, category: str | None = None, q: str | 
         stmt = stmt.where(Course.delivery_mode == mode)
     if category:
         stmt = stmt.where(Course.category == category)
+    if provider:
+        stmt = stmt.where(Course.provider == provider)
     if q:
         stmt = stmt.where(Course.title.ilike(f"%{q}%") | Course.code.ilike(f"%{q}%"))
     courses = db.scalars(stmt).all()
@@ -69,12 +72,19 @@ class CourseIn(BaseModel):
     is_mandatory: bool = False
     is_published: bool = True
     cover_color: str = "#0A84FF"
+    provider: str = "internal"
+    external_id: str | None = None
+    external_url: str = ""
     materials: list[MaterialIn] | None = None
 
 
 def _validate(body: CourseIn):
     if body.delivery_mode not in MODES:
         raise HTTPException(400, "Mode harus online, offline, atau blended")
+    if body.provider not in PROVIDERS:
+        raise HTTPException(400, "Sumber course harus internal, udemy, atau coursera")
+    if body.provider != "internal" and not body.external_url.strip():
+        raise HTTPException(400, "Course Udemy/Coursera wajib punya link course")
 
 
 @router.post("/courses", status_code=201)

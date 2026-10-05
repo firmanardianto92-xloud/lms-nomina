@@ -207,3 +207,66 @@ def test_deadline_boundaries():
     for days, state in [(-1, "overdue"), (0, "due_soon"), (90, "due_soon"), (91, "scheduled")]:
         e.due_date = ref + timedelta(days=days)
         assert deadline_info(e, ref)["state"] == state
+
+
+def test_external_course_hours_only_count_after_completion():
+    """Course Coursera 10 jam: berhenti di 40% → 0 jam; selesai di platform → +10 jam penuh + badge."""
+    m = login("member@nomina.id")
+    hours_before = m.get("/api/dashboard").json()["learner"]["hours"]["earned"]
+    enr = next(e for e in m.get("/api/enrollments").json() if e["course"]["external_id"] == "CRS-2004")
+    assert enr["course"]["provider"] == "coursera" and enr["course"]["duration_hours"] == 10
+    assert enr["external"]["progress"] == 40 and enr["status"] == "in_progress"
+    assert enr["hours_earned"] == 0
+
+    r = m.post(f"/api/enrollments/{enr['id']}/external-sim", json={"progress": 95}).json()
+    assert r["status"] == "in_progress" and r["hours_earned"] == 0
+    assert m.get("/api/dashboard").json()["learner"]["hours"]["earned"] == hours_before
+
+    r = m.post(f"/api/enrollments/{enr['id']}/external-sim", json={"complete": True}).json()
+    assert r["status"] == "completed" and r["hours_earned"] == 10
+    assert r["external"]["certificate_url"]
+    assert m.get("/api/dashboard").json()["learner"]["hours"]["earned"] == hours_before + 10
+    badges = [b["name"] for b in m.get("/api/certificates").json()["badges"]]
+    assert "CX Practitioner" in badges
+    # Tidak bisa disimulasikan lagi setelah selesai
+    assert m.post(f"/api/enrollments/{enr['id']}/external-sim", json={"progress": 10}).status_code == 400
+
+
+def test_catalog_sync_is_idempotent_and_admin_only():
+    admin = login("admin@nomina.id")
+    st = admin.get("/api/integrations/learning").json()
+    assert st["udemy"]["mode"] == "sample" and st["udemy"]["courses"] == 6
+    r = admin.post("/api/integrations/learning/udemy/sync-catalog", json={}).json()
+    assert r == {"provider": "udemy", "mode": "sample", "created": 0, "updated": 6}
+    andi = login("counselor@nomina.id")
+    assert andi.post("/api/integrations/learning/udemy/sync-catalog", json={}).status_code == 403
+    prog = admin.post("/api/integrations/learning/sync-progress").json()
+    assert prog["coursera"]["mode"] == "sample"
+    udemy = admin.get("/api/courses?provider=udemy").json()
+    assert len(udemy) == 6 and all(c["requirements"]["external"] for c in udemy)
+
+
+def test_internal_manual_course_still_counts_official_duration():
+    admin = login("admin@nomina.id")
+    c = admin.post("/api/courses", json={"code": "TST-EXT", "title": "Manual Udemy", "provider": "udemy",
+                                         "duration_hours": 3})
+    assert c.status_code == 400  # course eksternal wajib punya link
+    c = admin.post("/api/courses", json={"code": "TST-EXT", "title": "Manual Udemy", "provider": "udemy",
+                                         "external_url": "https://www.udemy.com/", "duration_hours": 3})
+    assert c.status_code == 201 and c.json()["requirements"]["external"]
+
+
+def test_udemy_xapi_webhook_completes_course(monkeypatch):
+    monkeypatch.setenv("UDEMY_XAPI_SECRET", "rahasia-webhook")
+    admin = login("admin@nomina.id")
+    course = next(c for c in admin.get("/api/courses?provider=udemy").json() if c["external_id"] == "UDM-1005")
+    stmt = {"actor": {"mbox": "mailto:lukman@nomina.id"}, "verb": {"id": "http://adlnet.gov/expapi/verbs/completed"},
+            "object": {"id": "https://nomina.udemy.com/course/UDM-1005"}, "timestamp": "2026-10-01T10:00:00Z"}
+    c = TestClient(app)
+    bad = c.post("/api/integrations/udemy/xapi", json=stmt, headers={"X-Nomina-Webhook-Secret": "salah"})
+    assert bad.status_code == 401
+    ok = c.post("/api/integrations/udemy/xapi", json=stmt, headers={"X-Nomina-Webhook-Secret": "rahasia-webhook"})
+    assert ok.json() == {"applied": 1}
+    lukman = login("lukman@nomina.id")
+    enr = next(e for e in lukman.get("/api/enrollments").json() if e["course"]["id"] == course["id"])
+    assert enr["status"] == "completed" and enr["hours_earned"] == course["duration_hours"] == 22

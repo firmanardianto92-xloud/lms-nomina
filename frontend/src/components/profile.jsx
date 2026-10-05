@@ -5,11 +5,12 @@ import {
   Send, TrendingUp, UserPlus, XCircle,
 } from "lucide-react";
 import { fmtDate, fmtDateTime, fmtHours } from "@/lib/format";
-import { DeadlineBadge, Empty, ModeBadge, SOURCE, StatusBadge, Tabs } from "./ui";
+import { DeadlineBadge, Empty, ModeBadge, ProviderBadge, SOURCE, StatusBadge, Tabs } from "./ui";
 import { BadgeChip, HoursCard, MonthlyChart, SectionCard, YearHistory } from "./learning";
 
 const ACT_ICON = {
   completed: [CheckCircle2, "text-emerald-600 bg-emerald-50"],
+  external_progress: [TrendingUp, "text-violet-600 bg-violet-50"],
   badge: [Award, "text-amber-600 bg-amber-50"],
   attended: [CalendarCheck, "text-brand-600 bg-brand-50"],
   absent: [CalendarX, "text-red-600 bg-red-50"],
@@ -86,16 +87,18 @@ export function EnrollmentTable({ rows, linkable = true }) {
                 <td className="px-5 py-2.5">
                   {linkable ? <Link to={`/belajar/${e.id}`} className="font-semibold text-slate-900 hover:text-brand-600">{e.course.title}</Link>
                     : <span className="font-semibold text-slate-900">{e.course.title}</span>}
-                  <p className="text-[11px] text-slate-500">{e.course.code} · {e.course.category}</p>
+                  <p className="flex items-center gap-1.5 text-[11px] text-slate-500"><ProviderBadge provider={e.course.provider} hideInternal />{e.course.code} · {e.course.category}</p>
                 </td>
                 <td className="px-3 py-2.5"><ModeBadge mode={e.course.delivery_mode} /></td>
                 <td className="px-3 py-2.5 text-xs text-slate-600">{SOURCE[e.source]}{e.assigned_by ? <span className="block text-slate-400">{e.assigned_by.name}</span> : null}</td>
-                <td className="px-3 py-2.5"><StatusBadge status={e.status} />{e.status !== "completed" && e.status !== "suggested" && <span className="ml-1 text-[11px] text-slate-500">{e.progress}%</span>}</td>
+                <td className="px-3 py-2.5"><StatusBadge status={e.status} />{e.status !== "completed" && e.status !== "suggested" && <span className="ml-1 text-[11px] text-slate-500">{e.progress}%</span>}
+                  {e.external && e.status !== "completed" && e.external.progress > 0 && <span className="block text-[10px] text-slate-400">0 jam s/d selesai</span>}</td>
                 <td className="px-3 py-2.5 text-xs">{e.due_date ? fmtDate(e.due_date) : "—"}<div><DeadlineBadge deadline={e.deadline} /></div></td>
                 <td className="px-3 py-2.5 text-xs">{e.completed_at ? fmtDate(e.completed_at) : "—"}</td>
                 <td className="px-3 py-2.5 text-right font-semibold">{e.status === "completed" ? fmtHours(e.hours_earned) : <span className="font-normal text-slate-400">{fmtHours(e.course.duration_hours)}</span>}</td>
                 <td className="px-5 py-2.5 text-xs">
-                  {e.certificate_no ? <Link to={`/sertifikat/${e.id}/cetak`} className="font-mono text-brand-600 hover:underline">{e.certificate_no}</Link> : "—"}
+                  {e.certificate_no ? <Link to={`/sertifikat/${e.id}/cetak`} className="font-mono text-brand-600 hover:underline">{e.certificate_no}</Link>
+                    : e.external?.certificate_url ? <a href={e.external.certificate_url} target="_blank" rel="noreferrer" className="text-brand-600 hover:underline">Sertifikat {e.course.provider === "udemy" ? "Udemy" : "Coursera"} ↗</a> : "—"}
                 </td>
               </tr>
             ))}

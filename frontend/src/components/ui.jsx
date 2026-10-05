@@ -91,8 +91,9 @@ export function Field({ label, hint, children, className }) {
 const INPUT = "w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-100 disabled:bg-slate-50";
 export const Input = ({ className, ...p }) => <input className={cx(INPUT, className)} {...p} />;
 export const Textarea = ({ className, ...p }) => <textarea className={cx(INPUT, "min-h-20", className)} {...p} />;
-export const Select = ({ className, children, ...p }) => (
-  <select className={cx(INPUT, "pr-8", className)} {...p}>
+// Lebar bawaan penuh; className dengan utilitas w-* (mis. w-auto) menggantikannya.
+export const Select = ({ className = "", children, ...p }) => (
+  <select className={cx(/(^|\s)w-/.test(className) ? INPUT.replace("w-full ", "") : INPUT, "pr-8", className)} {...p}>
     {children}
   </select>
 );
@@ -240,6 +241,21 @@ export function PlatformBadge({ platform }) {
     <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white" style={{ background: p.color }}>
       {platform === "offline" ? <Building2 className="size-3" /> : <Video className="size-3" />}
       {p.label}
+    </span>
+  );
+}
+
+export const PROVIDER = {
+  internal: { label: "Nomina Academy", short: "Nomina", color: "#0a84ff" },
+  udemy: { label: "Udemy Business", short: "Udemy", color: "#a435f0" },
+  coursera: { label: "Coursera", short: "Coursera", color: "#0056d2" },
+};
+export function ProviderBadge({ provider, hideInternal }) {
+  if (hideInternal && (!provider || provider === "internal")) return null;
+  const p = PROVIDER[provider] || PROVIDER.internal;
+  return (
+    <span className="inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: p.color }}>
+      {p.short}
     </span>
   );
 }

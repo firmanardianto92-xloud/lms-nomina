@@ -70,6 +70,25 @@ track hour terhadap target tahunan, track record + timeline aktivitas, badge & s
 - **Room kelas**: online (Zoom / Microsoft Teams / Google Meet) atau offline (lokasi wajib). Peserta yang diundang otomatis
   mendapat penugasan course. File `.ics` tersedia untuk ditambahkan ke kalender Outlook/Google.
 
+## Integrasi Udemy Business & Coursera for Business
+
+Course di katalog punya **sumber**: dibuat sendiri (Nomina), **Udemy**, atau **Coursera**. Course eksternal bisa
+diimpor otomatis (Kelola Course → *Sinkron katalog*) atau didaftarkan manual oleh admin (pilih sumber + link course).
+
+**Aturan jam (sama untuk semua sumber):** jam dihitung **penuh sesuai durasi resmi course** hanya saat course
+selesai — course online selesai & badge terbit, kelas offline selesai, atau Udemy/Coursera menyatakan selesai.
+Lama akses tidak dihitung. Contoh: course Coursera 10 jam yang berhenti di 40% = 0 jam; setelah selesai = 10 jam.
+
+- Progres dari platform ditarik lewat *Sinkron progres peserta* (Udemy Reporting API, Coursera enrollment report)
+  dan, untuk Udemy, real-time lewat webhook xAPI `POST /api/integrations/udemy/xapi`.
+- Peserta yang memulai course langsung di platform (tanpa ditugaskan) otomatis tercatat sebagai course mandiri.
+- **Mode contoh** (belum ada kredensial): katalog contoh 6 course Udemy + 6 Coursera, dan peserta bisa
+  mensimulasikan progres/penyelesaian dari halaman belajar. Kode di `backend/app/learning_providers.py`.
+- Isi kredensial di `backend/.env` untuk mode API. Endpoint & nama field API perlu dicocokkan dengan developer portal
+  akun Udemy Business / Coursera for Business Anda — belum diuji terhadap akun sungguhan.
+
+> Skema database bertambah kolom; database lama perlu dibuat ulang: `python -m app.seed --reset`.
+
 ## Integrasi Zoom / Teams / Google Meet
 
 `backend/app/meetings.py` memanggil API resmi masing-masing platform bila kredensial diisi di `backend/.env`

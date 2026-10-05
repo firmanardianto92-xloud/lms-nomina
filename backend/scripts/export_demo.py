@@ -36,7 +36,8 @@ def export(email: str) -> dict:
     c.post("/api/auth/login", json={"email": email, "password": DEMO_PASSWORD}).raise_for_status()
     out: dict = {}
     me = capture(c, out, "/auth/me")
-    for p in ["/dashboard", "/courses", "/enrollments", "/certificates", "/team", "/integrations/meetings",
+    for p in ["/dashboard", "/courses", "/enrollments", "/integrations/learning", "/certificates", "/team",
+              "/integrations/meetings",
               "/users", "/users?role=counselee", "/users?role=admin", "/users?role=counselor",
               f"/users/{me['id']}/profile"]:
         capture(c, out, p)

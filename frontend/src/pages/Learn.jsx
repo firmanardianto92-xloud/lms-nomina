@@ -5,10 +5,12 @@ import {
   ArrowLeft, Award, CalendarDays, CheckCircle2, Circle, ExternalLink, FileText, Link2, MapPin, PlayCircle, Presentation, Video,
 } from "lucide-react";
 import { api } from "@/lib/api";
-import { fmtDate, fmtDateTime, fmtHours, fmtTime } from "@/lib/format";
+import { IS_DEMO } from "@/lib/demo";
+import { fmtDate, fmtDateTime, fmtHours, fmtTime, timeAgo } from "@/lib/format";
 import { useMe } from "@/lib/session";
 import {
-  Badge, Button, Card, DeadlineBadge, Empty, ErrorBox, ModeBadge, PlatformBadge, Progress, SOURCE, Spinner, StatusBadge, cx,
+  Badge, Button, Card, DeadlineBadge, Empty, ErrorBox, ModeBadge, PROVIDER, PlatformBadge, Progress, ProviderBadge, SOURCE, Spinner,
+  StatusBadge, cx,
 } from "@/components/ui";
 import { SectionCard } from "@/components/learning";
 
@@ -45,7 +47,7 @@ export default function Learn() {
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">
-              <ModeBadge mode={e.course.delivery_mode} /> <StatusBadge status={e.status} /> <DeadlineBadge deadline={e.deadline} />
+              <ProviderBadge provider={e.course.provider} hideInternal /> <ModeBadge mode={e.course.delivery_mode} /> <StatusBadge status={e.status} /> <DeadlineBadge deadline={e.deadline} />
               {e.course.is_mandatory && <Badge tone="dark">Wajib</Badge>}
               <span className="text-xs text-slate-400">{e.course.code}</span>
             </div>
@@ -53,7 +55,7 @@ export default function Learn() {
             <p className="mt-1 text-sm text-slate-600">{e.course.description || e.course.summary}</p>
             <p className="mt-2 text-xs text-slate-500">
               {!owner && <b className="text-slate-700">Peserta: {e.user.name} · </b>}
-              {fmtHours(e.course.duration_hours)} · {e.course.level} · Instruktur {e.course.instructor} · {SOURCE[e.source]}{e.assigned_by && ` oleh ${e.assigned_by.name}`}
+              {fmtHours(e.course.duration_hours)} · {e.course.level} · {e.course.provider === "internal" ? "Instruktur" : "Penyedia"} {e.course.instructor} · {SOURCE[e.source]}{e.assigned_by && ` oleh ${e.assigned_by.name}`}
               {e.due_date && ` · Tenggat ${fmtDate(e.due_date)}`}
             </p>
             {e.note && <p className="mt-3 rounded-lg bg-brand-50 px-3 py-2 text-sm text-brand-800">💬 {e.note}</p>}
@@ -66,6 +68,7 @@ export default function Learn() {
             <Progress value={e.progress} className="mt-2" tone={e.status === "completed" ? "green" : "brand"} />
             <ul className="mt-3 space-y-1 text-xs text-slate-600">
               {req.materials && <li className="flex items-center gap-1.5">{done.size === e.course.materials.length ? <CheckCircle2 className="size-3.5 text-emerald-500" /> : <Circle className="size-3.5" />} Selesaikan {e.course.materials.length} materi online ({done.size}/{e.course.materials.length})</li>}
+              {req.external && <li className="flex items-center gap-1.5">{e.external?.completed ? <CheckCircle2 className="size-3.5 text-emerald-500" /> : <Circle className="size-3.5" />} Selesai di {PROVIDER[e.course.provider].short} (progres platform {e.external?.progress ?? 0}%)</li>}
               {req.attendance && <li className="flex items-center gap-1.5">{e.attended ? <CheckCircle2 className="size-3.5 text-emerald-500" /> : <Circle className="size-3.5" />} Hadir di kelas {e.course.delivery_mode === "blended" ? "live/offline" : "offline"} (absensi oleh fasilitator)</li>}
             </ul>
             {e.status === "completed" && (
@@ -79,7 +82,9 @@ export default function Learn() {
         </div>
       </Card>
 
-      <div className="grid gap-5 lg:grid-cols-3">
+      {req.external && <ExternalPanel e={e} owner={owner} active={active} />}
+
+      {!req.external && <div className="grid gap-5 lg:grid-cols-3">
         <SectionCard className="lg:col-span-2" title={req.materials ? "Materi Course" : "Materi Pendukung"} subtitle={req.materials ? "Tandai selesai setiap materi — course otomatis selesai saat semua syarat terpenuhi" : "Bacaan sebelum kelas (tidak memengaruhi kelulusan)"} icon={FileText}>
           {e.course.materials.length === 0 ? <Empty title="Tidak ada materi online" /> : (
             <div className="grid md:grid-cols-[240px_1fr]">
@@ -159,7 +164,72 @@ export default function Learn() {
           </div>
           <ErrorBox error={register.error} />
         </SectionCard>
-      </div>
+      </div>}
     </>
+  );
+}
+
+function ExternalPanel({ e, owner, active }) {
+  const qc = useQueryClient();
+  const p = PROVIDER[e.course.provider];
+  const ext = e.external || { progress: 0 };
+  const status = useQuery({ queryKey: ["learning-integrations"], queryFn: () => api.get("/integrations/learning") });
+  const sim = useMutation({
+    mutationFn: (body) => api.post(`/enrollments/${e.id}/external-sim`, body),
+    onSuccess: () => qc.invalidateQueries(),
+  });
+  const sample = status.data?.[e.course.provider]?.mode === "sample";
+  return (
+    <div className="grid gap-5 lg:grid-cols-3">
+      <SectionCard className="lg:col-span-2" title={`Belajar di ${p.label}`} subtitle="Progres disinkronkan dari platform" icon={ExternalLink}>
+        <div className="space-y-5 p-5">
+          <div className="flex flex-wrap items-center gap-5">
+            <div className="flex size-20 shrink-0 items-center justify-center rounded-2xl text-xl font-extrabold text-white" style={{ background: p.color }}>
+              {ext.progress}%
+            </div>
+            <div className="min-w-0 flex-1">
+              <Progress value={ext.progress} tone={e.status === "completed" ? "green" : "brand"} />
+              <p className="mt-2 text-sm text-slate-600">
+                {e.status === "completed" ? `Selesai di ${p.short} — ${fmtHours(e.hours_earned)} sudah masuk ke target tahunan.`
+                  : ext.progress > 0 ? `Progres ${ext.progress}% di ${p.short} belum menambah jam. ${fmtHours(e.course.duration_hours)} dihitung penuh setelah course selesai.`
+                  : `Belum mulai di ${p.short}.`}
+              </p>
+              <p className="mt-1 text-xs text-slate-400">
+                {ext.last_activity ? `Aktivitas terakhir di platform ${timeAgo(ext.last_activity)}` : "Belum ada aktivitas"}{ext.synced_at && ` · sinkron ${timeAgo(ext.synced_at)}`}
+              </p>
+            </div>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <a href={e.course.external_url} target="_blank" rel="noreferrer">
+              <Button style={{ background: p.color }}><ExternalLink className="size-4" /> {e.status === "completed" ? "Buka" : ext.progress > 0 ? "Lanjutkan" : "Mulai"} di {p.short}</Button>
+            </a>
+            {ext.certificate_url && (
+              <a href={ext.certificate_url} target="_blank" rel="noreferrer"><Button variant="outline"><Award className="size-4" /> Sertifikat {p.short}</Button></a>
+            )}
+          </div>
+          <p className="text-sm leading-relaxed text-slate-600">{e.course.description}</p>
+        </div>
+      </SectionCard>
+      <SectionCard title="Aturan jam pelatihan" icon={Award}>
+        <div className="space-y-3 p-5 text-sm text-slate-600">
+          <p>Durasi resmi course ini <b>{fmtHours(e.course.duration_hours)}</b>.</p>
+          <p>Jam <b>tidak</b> dihitung dari lama akses. Bila course ditutup di tengah jalan, jam tetap 0 sampai course diselesaikan.</p>
+          <p>Saat {p.short} menyatakan course selesai, badge “{e.course.badge_name}” terbit dan {fmtHours(e.course.duration_hours)} masuk ke target {new Date().getFullYear()}.</p>
+          {sample && owner && active && !IS_DEMO && (
+            <div className="rounded-xl border border-dashed border-amber-300 bg-amber-50 p-3">
+              <p className="text-xs font-bold text-amber-900">Simulasi platform (mode contoh)</p>
+              <p className="mt-0.5 text-xs text-amber-800">Belum ada akun {p.label}. Gunakan tombol ini untuk meniru aktivitas Anda di sana.</p>
+              <div className="mt-2 flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" loading={sim.isPending && !sim.variables?.complete}
+                  onClick={() => sim.mutate({ progress: Math.min(95, ext.progress + 25) })}>+25% progres</Button>
+                <Button size="sm" variant="success" loading={sim.isPending && sim.variables?.complete}
+                  onClick={() => sim.mutate({ complete: true })}>Selesaikan di {p.short}</Button>
+              </div>
+              <ErrorBox error={sim.error} />
+            </div>
+          )}
+        </div>
+      </SectionCard>
+    </div>
   );
 }

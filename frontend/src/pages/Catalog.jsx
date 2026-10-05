@@ -5,16 +5,17 @@ import { Award, Clock, LibraryBig, Search, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { fmtHours } from "@/lib/format";
 import { useMe } from "@/lib/session";
-import { Badge, Button, Card, Empty, Input, ModeBadge, PageHeader, Select, Spinner, Tabs } from "@/components/ui";
+import { Badge, Button, Card, Empty, Input, ModeBadge, PROVIDER, PageHeader, Select, Spinner, Tabs } from "@/components/ui";
 
 export default function Catalog() {
   const { data: me } = useMe();
   const [mode, setMode] = useState("");
   const [cat, setCat] = useState("");
   const [q, setQ] = useState("");
+  const [src, setSrc] = useState("");
   const { data = [], isLoading } = useQuery({ queryKey: ["courses"], queryFn: () => api.get("/courses") });
   const categories = [...new Set(data.map((c) => c.category))].sort();
-  const list = data.filter((c) => (!mode || c.delivery_mode === mode) && (!cat || c.category === cat) &&
+  const list = data.filter((c) => (!mode || c.delivery_mode === mode) && (!cat || c.category === cat) && (!src || c.provider === src) &&
     (!q || `${c.title} ${c.code} ${c.skills.join(" ")}`.toLowerCase().includes(q.toLowerCase())));
 
   return (
@@ -28,6 +29,10 @@ export default function Catalog() {
           { value: "offline", label: "Offline", count: data.filter((c) => c.delivery_mode === "offline").length },
           { value: "blended", label: "Blended", count: data.filter((c) => c.delivery_mode === "blended").length },
         ]} />
+        <Select value={src} onChange={(e) => setSrc(e.target.value)} className="w-auto" aria-label="Sumber course">
+          <option value="">Semua sumber</option>
+          {Object.entries(PROVIDER).map(([k, p]) => <option key={k} value={k}>{p.label} ({data.filter((c) => c.provider === k).length})</option>)}
+        </Select>
         <Select value={cat} onChange={(e) => setCat(e.target.value)} className="w-auto">
           <option value="">Semua kategori</option>
           {categories.map((c) => <option key={c}>{c}</option>)}
@@ -44,7 +49,7 @@ export default function Catalog() {
               <Card className="flex h-full flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
                 <div className="relative h-24 p-4" style={{ background: `linear-gradient(135deg, ${c.cover_color}, ${c.cover_color}cc)` }}>
                   <div className="absolute right-0 top-0 h-full w-28 bg-white/10" style={{ clipPath: "polygon(30% 0,100% 0,100% 100%)" }} />
-                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/80">{c.category}</p>
+                  <div className="flex items-center justify-between"><p className="text-[11px] font-bold uppercase tracking-wider text-white/80">{c.category}</p>{c.provider !== "internal" && <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold" style={{ color: c.cover_color }}>{PROVIDER[c.provider].short}</span>}</div>
                   <p className="mt-1 font-mono text-xs text-white/70">{c.code}</p>
                 </div>
                 <div className="flex flex-1 flex-col p-4">

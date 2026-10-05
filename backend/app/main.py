@@ -9,7 +9,7 @@ from fastapi.staticfiles import StaticFiles
 
 from .db import Base, SessionLocal, engine
 from .models import User
-from .routers import auth, certificates, courses, dashboard, enrollments, rooms, users
+from .routers import auth, certificates, courses, dashboard, enrollments, integrations, rooms, users
 
 FRONTEND_DIST = Path(__file__).resolve().parents[2] / "frontend" / "dist"
 
@@ -42,7 +42,7 @@ def health():
     return {"status": "ok", "app": "Nomina Academy LMS"}
 
 
-for r in (auth, users, courses, enrollments, rooms, dashboard, certificates):
+for r in (auth, users, courses, enrollments, rooms, dashboard, certificates, integrations):
     api.include_router(r.router)
 app.include_router(api)
 

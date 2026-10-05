@@ -1,11 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Award, CalendarDays, CheckCircle2, Clock, FileText, GraduationCap, Pencil, Plus, UserRound } from "lucide-react";
+import { ArrowLeft, Award, CalendarDays, CheckCircle2, Clock, ExternalLink, FileText, GraduationCap, Info, Pencil, Plus, UserRound } from "lucide-react";
 import { api } from "@/lib/api";
 import { fmtDateTime, fmtHours } from "@/lib/format";
 import { useMe } from "@/lib/session";
-import { Badge, Button, Card, ErrorBox, Field, Input, ModeBadge, PlatformBadge, Spinner } from "@/components/ui";
+import { Badge, Button, Card, ErrorBox, Field, Input, ModeBadge, PROVIDER, PlatformBadge, ProviderBadge, Spinner } from "@/components/ui";
 import { SectionCard } from "@/components/learning";
 import { AssignDialog, RoomFormDialog } from "@/components/dialogs";
 
@@ -39,7 +39,7 @@ export default function CourseDetail() {
           <h1 className="mt-2 max-w-3xl text-3xl font-extrabold">{c.title}</h1>
           <p className="mt-2 max-w-2xl text-white/80">{c.summary}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ModeBadge mode={c.delivery_mode} /> <Badge>{c.level}</Badge> <Badge><Clock className="size-3" /> {fmtHours(c.duration_hours)}</Badge>
+            <ProviderBadge provider={c.provider} hideInternal /> <ModeBadge mode={c.delivery_mode} /> <Badge>{c.level}</Badge> <Badge><Clock className="size-3" /> {fmtHours(c.duration_hours)}</Badge>
             {c.is_mandatory && <Badge tone="red">Wajib tahunan</Badge>}
             {!c.is_published && <Badge tone="amber">Draft</Badge>}
           </div>
@@ -58,11 +58,13 @@ export default function CourseDetail() {
               <h2 className="font-bold">Syarat kelulusan</h2>
               <ul className="mt-2 space-y-1 text-sm text-slate-600">
                 {req.materials && <li className="flex gap-2"><CheckCircle2 className="size-4 text-emerald-500" /> Menyelesaikan {c.material_count} materi online</li>}
+                {req.external && <li className="flex gap-2"><CheckCircle2 className="size-4 text-emerald-500" /> Menyelesaikan course di {PROVIDER[c.provider].label} hingga platform menyatakan selesai</li>}
+                {req.external && <li className="flex gap-2"><Info className="size-4 text-slate-400" /> Progres parsial / berhenti di tengah tidak menambah jam — {fmtHours(c.duration_hours)} dihitung penuh setelah selesai</li>}
                 {req.attendance && <li className="flex gap-2"><CheckCircle2 className="size-4 text-emerald-500" /> Hadir di kelas {c.delivery_mode === "blended" ? "live / tatap muka" : "tatap muka"} (absensi fasilitator)</li>}
                 <li className="flex gap-2"><Award className="size-4 text-amber-500" /> Mendapat badge “{c.badge_name}”{c.has_certificate && " + sertifikat Nomina Academy"} dan +{fmtHours(c.duration_hours)} ke target tahunan</li>
               </ul>
             </div>
-            <div>
+            {c.materials.length > 0 && <div>
               <h2 className="font-bold">Silabus</h2>
               <ol className="mt-2 divide-y divide-slate-100 rounded-xl border border-slate-200">
                 {c.materials.map((m, i) => (
@@ -72,11 +74,16 @@ export default function CourseDetail() {
                   </li>
                 ))}
               </ol>
-            </div>
+            </div>}
           </div>
           <div className="space-y-4">
             <Card className="p-4">
-              <p className="flex items-center gap-2 text-sm text-slate-600"><UserRound className="size-4" /> Instruktur: <b>{c.instructor}</b></p>
+              <p className="flex items-center gap-2 text-sm text-slate-600"><UserRound className="size-4" /> {c.provider === "internal" ? "Instruktur" : "Penyedia"}: <b>{c.instructor}</b></p>
+              {c.provider !== "internal" && (
+                <a href={c.external_url} target="_blank" rel="noreferrer" className="mt-3 block">
+                  <Button variant="outline" className="w-full"><ExternalLink className="size-4" /> Lihat di {PROVIDER[c.provider].short}</Button>
+                </a>
+              )}
               {me.role === "admin" ? (
                 <div className="mt-4 space-y-2">
                   <Link to={`/admin/course/${c.id}`}><Button variant="outline" className="w-full"><Pencil className="size-4" /> Edit course & materi</Button></Link>

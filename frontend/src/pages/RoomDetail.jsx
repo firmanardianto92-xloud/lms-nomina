@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, CalendarPlus, Check, Copy, MapPin, RefreshCw, Trash2, UserPlus, Users, Video, X } from "lucide-react";
 import { api } from "@/lib/api";
+import { IS_DEMO } from "@/lib/demo";
 import { fmtDateTime, fmtHours, fmtTime } from "@/lib/format";
 import { useMe } from "@/lib/session";
 import { Avatar, Badge, Button, Card, Empty, ErrorBox, Modal, ModeBadge, PLATFORM, PlatformBadge, Spinner, cx } from "@/components/ui";
@@ -64,7 +65,7 @@ export default function RoomDetail() {
               )}
               {r.notes && <p className="rounded-xl bg-slate-50 p-4 text-sm text-slate-700">📝 {r.notes}</p>}
               <div className="flex flex-wrap gap-2">
-                <a href={`/api/rooms/${r.id}/ics`}><Button variant="outline" size="sm"><CalendarPlus className="size-3.5" /> Tambah ke kalender (.ics)</Button></a>
+                {!IS_DEMO && <a href={`/api/rooms/${r.id}/ics`}><Button variant="outline" size="sm"><CalendarPlus className="size-3.5" /> Tambah ke kalender (.ics)</Button></a>}
                 {me.role !== "admin" && !r.can_manage && !r.my_status && r.state !== "finished" && (
                   <Button size="sm" onClick={() => register.mutate()} loading={register.isPending}>Daftar kelas ini</Button>
                 )}

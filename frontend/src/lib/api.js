@@ -1,3 +1,5 @@
+import { IS_DEMO, demoRequest } from "./demo";
+
 // Lapisan fetch ke FastAPI. Selalu relatif ke /api; sesi memakai cookie httpOnly.
 export class ApiError extends Error {
   constructor(status, body) {
@@ -8,6 +10,7 @@ export class ApiError extends Error {
 }
 
 async function request(method, path, body) {
+  if (IS_DEMO) return demoRequest(method, path, body, ApiError);
   const isForm = body instanceof FormData;
   const init = { method, credentials: "include" };
   if (body !== undefined) {

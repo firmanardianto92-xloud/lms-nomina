@@ -3,6 +3,7 @@ import { Navigate, useNavigate } from "react-router-dom";
 import { useQueryClient } from "@tanstack/react-query";
 import { ArrowRight, ShieldCheck, UserRound, Users } from "lucide-react";
 import { api } from "@/lib/api";
+import { IS_DEMO } from "@/lib/demo";
 import { useMe } from "@/lib/session";
 import { Logo } from "@/components/Logo";
 import { Button, ErrorBox, Field, Input } from "@/components/ui";
@@ -67,6 +68,7 @@ export default function Login() {
       <div className="flex items-center justify-center p-6">
         <div className="w-full max-w-md">
           <div className="mb-8 lg:hidden"><Logo dark={false} /></div>
+          {IS_DEMO && <p className="mb-4 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-900">Mode mockup — pilih salah satu akun demo di bawah untuk mencoba tiap peran.</p>}
           <h2 className="text-2xl font-extrabold text-slate-900">Masuk ke portal</h2>
           <p className="mt-1 text-sm text-slate-500">Gunakan akun perusahaan Anda.</p>
           <form onSubmit={submit} className="mt-6 space-y-4">

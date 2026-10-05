@@ -2,6 +2,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, Printer } from "lucide-react";
 import { api } from "@/lib/api";
+import { IS_DEMO } from "@/lib/demo";
 import { fmtHours, fmtLongDate } from "@/lib/format";
 import { Button, ErrorBox, Spinner } from "@/components/ui";
 import { LogoMark } from "@/components/Logo";
@@ -17,7 +18,7 @@ export default function CertificateView() {
     <div className="min-h-full bg-slate-200 p-4 print:bg-white print:p-0">
       <div className="no-print mx-auto mb-4 flex max-w-[1000px] justify-between">
         <Button variant="outline" onClick={() => nav(-1)}><ArrowLeft className="size-4" /> Kembali</Button>
-        <Button onClick={() => window.print()}><Printer className="size-4" /> Cetak / simpan PDF</Button>
+        {!IS_DEMO && <Button onClick={() => window.print()}><Printer className="size-4" /> Cetak / simpan PDF</Button>}
       </div>
       <div className="relative mx-auto aspect-[297/210] max-w-[1000px] overflow-hidden bg-white shadow-xl print:max-w-none print:shadow-none">
         <div className="absolute inset-0 bg-ink" style={{ clipPath: "polygon(0 0, 34% 0, 22% 100%, 0 100%)" }} />

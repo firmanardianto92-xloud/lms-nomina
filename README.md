@@ -23,6 +23,17 @@ Mode produksi satu port: `npm run build` di `frontend/`, lalu jalankan uvicorn â
 
 Reset data sampel: `python -m app.seed --reset` (di folder `backend/`). Test: `pytest` (di folder `backend/`).
 
+## Mode mockup (tanpa backend)
+
+Build statis yang membaca snapshot data sampel, cocok untuk demo/presentasi:
+
+```bash
+cd backend && python -m scripts.export_demo ../frontend/public/demo-data.json
+cd ../frontend && npm run build:demo        # hasil di frontend/dist-demo, bisa di-host di hosting statis mana pun
+```
+
+Di mode ini semua halaman bisa dijelajahi untuk 3 akun demo; aksi yang mengubah data tidak disimpan.
+
 ## Akun demo (kata sandi `nomina123`)
 
 | Role | Email | Nama |

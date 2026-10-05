@@ -5,6 +5,7 @@ import {
   Award, BookOpen, CalendarDays, GraduationCap, History, LayoutDashboard, LibraryBig, LogOut, Menu, Settings2, Users, X,
 } from "lucide-react";
 import { api } from "@/lib/api";
+import { IS_DEMO } from "@/lib/demo";
 import { ROLE_LABEL, useMe } from "@/lib/session";
 import { Logo } from "./Logo";
 import { Avatar, cx } from "./ui";
@@ -96,6 +97,11 @@ export default function Layout() {
           </button>
           <Logo dark={false} />
         </header>
+        {IS_DEMO && (
+          <div className="bg-amber-100 px-4 py-1.5 text-center text-xs font-medium text-amber-900">
+            Mode mockup — data sampel, perubahan tidak disimpan. Ganti peran lewat tombol keluar di kiri bawah.
+          </div>
+        )}
         <main className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 sm:px-6 lg:px-8 lg:py-8">
           <Outlet />
         </main>

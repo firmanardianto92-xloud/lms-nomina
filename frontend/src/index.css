@@ -1,0 +1,23 @@
+@import "tailwindcss";
+@import "@fontsource-variable/plus-jakarta-sans";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans Variable", ui-sans-serif, system-ui, sans-serif;
+  --color-brand-50: #eef6ff;
+  --color-brand-100: #d9ebff;
+  --color-brand-200: #bcdcff;
+  --color-brand-500: #0a84ff;
+  --color-brand-600: #006fe0;
+  --color-brand-700: #0059b5;
+  --color-ink: #0b0f1a;
+  --color-ink-2: #121a2b;
+}
+
+html, body, #root { height: 100%; }
+body { @apply bg-slate-50 text-slate-800 antialiased; }
+
+@media print {
+  .no-print { display: none !important; }
+  body { background: white; }
+  @page { size: A4 landscape; margin: 0; }
+}

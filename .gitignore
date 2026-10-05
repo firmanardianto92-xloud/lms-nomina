@@ -1,0 +1,8 @@
+backend/nomina.db
+backend/uploads/
+backend/.env
+frontend/node_modules/
+frontend/dist/
+__pycache__/
+.pytest_cache/
+.ruff_cache/

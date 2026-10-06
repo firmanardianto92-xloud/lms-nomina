@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
 import { AlertTriangle, Award, CalendarClock, CheckCircle2, ChevronLeft, ChevronRight, Clock, MapPin, TrendingUp, Video } from "lucide-react";
 import { BULAN_PANJANG, HARI, fmtDate, fmtHours, fmtTime, monthShort, parse, relDays, toInputDate } from "@/lib/format";
-import { Avatar, Badge, Card, CardHeader, DeadlineBadge, ProviderBadge, Empty, ModeBadge, PACE, PaceBadge, PlatformBadge, Progress, SOURCE, StatusBadge, cx } from "./ui";
+import { Avatar, Badge, Card, CardHeader, DeadlineBadge, ProviderBadge, modeColor, Empty, ModeBadge, PACE, PaceBadge, PlatformBadge, Progress, SOURCE, StatusBadge, cx } from "./ui";
 
 // ------------------------------------------------------------------ Jam & target tahunan
 export function HoursRing({ earned, target, size = 148 }) {
@@ -166,6 +166,7 @@ function ScheduleItem({ item }) {
         <div className="flex flex-wrap items-center gap-2">
           <DeadlineBadge deadline={e.deadline} />
           <ModeBadge mode={e.course.delivery_mode} />
+          <ProviderBadge provider={e.course.provider} hideInternal />
           {e.course.is_mandatory && <Badge tone="dark">Wajib</Badge>}
         </div>
         <p className="mt-1 truncate font-semibold text-slate-900">{e.course.title}</p>
@@ -256,7 +257,7 @@ const Legend = ({ c, l }) => <span className="flex items-center gap-1"><span cla
 export function EnrollmentCard({ e, actions }) {
   return (
     <Card className="flex flex-col overflow-hidden">
-      <div className="h-1.5" style={{ background: e.course.cover_color }} />
+      <div className="h-1.5" style={{ background: modeColor(e.course.delivery_mode) }} />
       <div className="flex flex-1 flex-col p-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <ProviderBadge provider={e.course.provider} hideInternal />

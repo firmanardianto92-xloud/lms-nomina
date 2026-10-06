@@ -5,7 +5,7 @@ import { Award, Clock, LibraryBig, Search, Users } from "lucide-react";
 import { api } from "@/lib/api";
 import { fmtHours } from "@/lib/format";
 import { useMe } from "@/lib/session";
-import { Badge, Button, Card, Empty, Input, ModeBadge, PROVIDER, PageHeader, Select, Spinner, Tabs } from "@/components/ui";
+import { Badge, Button, Card, Empty, Input, ModeBadge, ModeLegend, PROVIDER, PageHeader, ProviderBadge, Select, Spinner, Tabs, modeColor } from "@/components/ui";
 
 export default function Catalog() {
   const { data: me } = useMe();
@@ -22,6 +22,7 @@ export default function Catalog() {
     <>
       <PageHeader eyebrow="Nomina Academy" title="Katalog Course" subtitle="Kurikulum berbasis kebutuhan industri — online mandiri, kelas offline, atau blended."
         action={me.role === "admin" && <Link to="/admin/course/baru"><Button>+ Course baru</Button></Link>} />
+      <div className="mb-4"><ModeLegend /></div>
       <div className="mb-5 flex flex-wrap items-center gap-3">
         <Tabs value={mode} onChange={setMode} tabs={[
           { value: "", label: "Semua", count: data.length },
@@ -47,14 +48,15 @@ export default function Catalog() {
           {list.map((c) => (
             <Link key={c.id} to={`/katalog/${c.id}`}>
               <Card className="flex h-full flex-col overflow-hidden transition hover:-translate-y-0.5 hover:shadow-md">
-                <div className="relative h-24 p-4" style={{ background: `linear-gradient(135deg, ${c.cover_color}, ${c.cover_color}cc)` }}>
+                <div className="relative h-24 p-4" style={{ background: `linear-gradient(135deg, ${modeColor(c.delivery_mode)}, ${modeColor(c.delivery_mode)}d0)` }}>
                   <div className="absolute right-0 top-0 h-full w-28 bg-white/10" style={{ clipPath: "polygon(30% 0,100% 0,100% 100%)" }} />
-                  <div className="flex items-center justify-between"><p className="text-[11px] font-bold uppercase tracking-wider text-white/80">{c.category}</p>{c.provider !== "internal" && <span className="rounded-full bg-white px-2 py-0.5 text-[11px] font-extrabold" style={{ color: c.cover_color }}>{PROVIDER[c.provider].short}</span>}</div>
+                  <p className="text-[11px] font-bold uppercase tracking-wider text-white/85">{c.category}</p>
                   <p className="mt-1 font-mono text-xs text-white/70">{c.code}</p>
                 </div>
                 <div className="flex flex-1 flex-col p-4">
                   <div className="flex flex-wrap gap-1.5">
                     <ModeBadge mode={c.delivery_mode} />
+                    <ProviderBadge provider={c.provider} />
                     <Badge>{c.level}</Badge>
                     {c.is_mandatory && <Badge tone="dark">Wajib tahunan</Badge>}
                   </div>

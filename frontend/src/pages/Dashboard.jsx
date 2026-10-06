@@ -9,7 +9,7 @@ import { Bar, BarChart, CartesianGrid, Cell, Pie, PieChart, ResponsiveContainer,
 import { api } from "@/lib/api";
 import { fmtDateTime, fmtHours } from "@/lib/format";
 import {
-  Avatar, Badge, Button, Empty, ModeBadge, PACE, PageHeader, PaceBadge, PlatformBadge, Progress, Spinner, StatCard,
+  Avatar, Badge, Button, Empty, ModeBadge, ModeLegend, PACE, PageHeader, PaceBadge, PlatformBadge, Progress, Spinner, StatCard,
 } from "@/components/ui";
 import { AlertList, BadgeChip, EnrollmentCard, HoursCard, MonthCalendar, MonthlyChart, ScheduleList, SectionCard } from "@/components/learning";
 import { AssignDialog, RoomFormDialog } from "@/components/dialogs";
@@ -68,6 +68,8 @@ function LearnerDashboard({ data }) {
           <StatCard label="Sertifikat" value={L.counts.certificates} icon={Award} tone="green" hint={`${L.counts.completed_year} course selesai ${L.hours.year}`} />
         </div>
       </div>
+
+      <div className="mt-5"><ModeLegend /></div>
 
       <div className="mt-5 grid gap-5 lg:grid-cols-3">
         <SectionCard

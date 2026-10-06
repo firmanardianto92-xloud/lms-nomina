@@ -5,7 +5,7 @@ import { ArrowLeft, Award, CalendarDays, CheckCircle2, Clock, ExternalLink, File
 import { api } from "@/lib/api";
 import { fmtDateTime, fmtHours } from "@/lib/format";
 import { useMe } from "@/lib/session";
-import { Badge, Button, Card, ErrorBox, Field, Input, ModeBadge, PROVIDER, PlatformBadge, ProviderBadge, Spinner } from "@/components/ui";
+import { Badge, Button, Card, ErrorBox, Field, Input, ModeBadge, PROVIDER, PlatformBadge, ProviderBadge, Spinner, modeColor } from "@/components/ui";
 import { SectionCard } from "@/components/learning";
 import { AssignDialog, RoomFormDialog } from "@/components/dialogs";
 
@@ -34,12 +34,12 @@ export default function CourseDetail() {
     <>
       <button onClick={() => nav(-1)} className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 cursor-pointer"><ArrowLeft className="size-4" /> Katalog</button>
       <Card className="overflow-hidden">
-        <div className="p-8 text-white" style={{ background: `linear-gradient(135deg, ${c.cover_color}, #0b0f1a)` }}>
+        <div className="p-8 text-white" style={{ background: `linear-gradient(135deg, ${modeColor(c.delivery_mode)}, #0b0f1a)` }}>
           <p className="text-xs font-bold uppercase tracking-[0.2em] text-white/70">{c.category} · {c.code}</p>
           <h1 className="mt-2 max-w-3xl text-3xl font-extrabold">{c.title}</h1>
           <p className="mt-2 max-w-2xl text-white/80">{c.summary}</p>
           <div className="mt-4 flex flex-wrap gap-2">
-            <ProviderBadge provider={c.provider} hideInternal /> <ModeBadge mode={c.delivery_mode} /> <Badge>{c.level}</Badge> <Badge><Clock className="size-3" /> {fmtHours(c.duration_hours)}</Badge>
+            <ModeBadge mode={c.delivery_mode} /> <ProviderBadge provider={c.provider} /> <Badge>{c.level}</Badge> <Badge><Clock className="size-3" /> {fmtHours(c.duration_hours)}</Badge>
             {c.is_mandatory && <Badge tone="red">Wajib tahunan</Badge>}
             {!c.is_published && <Badge tone="amber">Draft</Badge>}
           </div>

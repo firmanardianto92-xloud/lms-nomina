@@ -10,7 +10,7 @@ import { fmtDate, fmtDateTime, fmtHours, fmtTime, timeAgo } from "@/lib/format";
 import { useMe } from "@/lib/session";
 import {
   Badge, Button, Card, DeadlineBadge, Empty, ErrorBox, ModeBadge, PROVIDER, PlatformBadge, Progress, ProviderBadge, SOURCE, Spinner,
-  StatusBadge, cx,
+  StatusBadge, cx, modeColor,
 } from "@/components/ui";
 import { SectionCard } from "@/components/learning";
 
@@ -43,7 +43,7 @@ export default function Learn() {
     <>
       <button onClick={() => nav(-1)} className="mb-4 inline-flex items-center gap-1 text-sm text-slate-500 hover:text-slate-800 cursor-pointer"><ArrowLeft className="size-4" /> Kembali</button>
       <Card className="mb-5 overflow-hidden">
-        <div className="h-2" style={{ background: e.course.cover_color }} />
+        <div className="h-2" style={{ background: modeColor(e.course.delivery_mode) }} />
         <div className="flex flex-wrap items-start justify-between gap-4 p-6">
           <div className="max-w-3xl">
             <div className="flex flex-wrap items-center gap-2">

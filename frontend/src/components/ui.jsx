@@ -218,29 +218,49 @@ export function StatCard({ label, value, hint, icon: Icon, tone = "blue" }) {
 }
 
 // ------------------------------------------------------------------ domain badges
+// Kode warna jenis course: online = hijau, offline = merah, blended = amber.
+// Warna -700 supaya teks putih tetap terbaca (kontras ≥ 5:1).
 export const MODE = {
-  online: { label: "Online", tone: "blue", icon: Laptop },
-  offline: { label: "Offline", tone: "orange", icon: Building2 },
-  blended: { label: "Blended", tone: "violet", icon: Layers },
+  online: { label: "Online", icon: Laptop, color: "#047857" },
+  offline: { label: "Offline", icon: Building2, color: "#BE123C" },
+  blended: { label: "Blended", icon: Layers, color: "#B45309" },
 };
-export const ModeBadge = ({ mode }) => {
+export const modeColor = (mode) => (MODE[mode] || MODE.online).color;
+export function ModeBadge({ mode, label }) {
   const m = MODE[mode] || MODE.online;
-  return <Badge tone={m.tone} icon={m.icon}>{m.label}</Badge>;
-};
+  return (
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: m.color }}>
+      <m.icon className="size-3" />
+      {label || m.label}
+    </span>
+  );
+}
+export function ModeLegend() {
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 text-xs text-slate-500">
+      <span className="font-semibold text-slate-600">Jenis:</span>
+      {Object.keys(MODE).map((k) => <ModeBadge key={k} mode={k} />)}
+      <span className="ml-2 font-semibold text-slate-600">Sumber:</span>
+      {Object.keys(PROVIDER).map((k) => <ProviderBadge key={k} provider={k} />)}
+    </div>
+  );
+}
 
 export const PLATFORM = {
   zoom: { label: "Zoom", color: "#2D8CFF" },
   teams: { label: "Microsoft Teams", color: "#5059C9" },
   gmeet: { label: "Google Meet", color: "#00897B" },
   other: { label: "Link lain", color: "#64748b" },
-  offline: { label: "Tatap muka", color: "#ea580c" },
+  offline: { label: "Tatap muka", color: "#BE123C" },
 };
+// Badge kelas mengikuti kode warna jenis: offline merah, online hijau + nama platform.
+const PLATFORM_SHORT = { zoom: "Zoom", teams: "Teams", gmeet: "Meet", other: "link" };
 export function PlatformBadge({ platform }) {
-  const p = PLATFORM[platform] || PLATFORM.other;
+  if (platform === "offline") return <ModeBadge mode="offline" label="Offline · tatap muka" />;
   return (
-    <span className="inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-[11px] font-semibold text-white" style={{ background: p.color }}>
-      {platform === "offline" ? <Building2 className="size-3" /> : <Video className="size-3" />}
-      {p.label}
+    <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full px-2.5 py-0.5 text-[11px] font-bold text-white" style={{ background: MODE.online.color }}>
+      <Video className="size-3" />
+      Online · {PLATFORM_SHORT[platform] || "link"}
     </span>
   );
 }

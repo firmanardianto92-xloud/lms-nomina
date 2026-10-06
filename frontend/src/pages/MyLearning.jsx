@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookOpen, CheckCircle2, GraduationCap } from "lucide-react";
 import { api } from "@/lib/api";
-import { Button, Empty, PageHeader, Spinner, Tabs } from "@/components/ui";
+import { Button, Empty, ModeLegend, PageHeader, Spinner, Tabs } from "@/components/ui";
 import { EnrollmentCard } from "@/components/learning";
 
 export default function MyLearning() {
@@ -23,6 +23,7 @@ export default function MyLearning() {
     <>
       <PageHeader eyebrow="Pelatihan Saya" title="Course yang Saya Ikuti" subtitle="Course wajib dari counselor/admin, rekomendasi, dan course yang Anda pilih sendiri."
         action={<Link to="/katalog"><Button variant="outline"><BookOpen className="size-4" /> Tambah dari katalog</Button></Link>} />
+      <div className="mb-4"><ModeLegend /></div>
       <Tabs value={tab} onChange={setTab} tabs={[
         { value: "active", label: "Aktif", count: groups.active.length },
         { value: "suggested", label: "Rekomendasi", count: groups.suggested.length },

@@ -11,7 +11,20 @@
   --color-brand-700: #0059b5;
   --color-ink: #0b0f1a;
   --color-ink-2: #121a2b;
+  /* Landing page */
+  --color-hero: #0b2a44;
+  --color-mark: #0a84ff;
+  --color-cta: #e85d1a;
 }
+
+/* Dinding kartu peserta di hero landing page */
+@keyframes wall-up { from { transform: translateY(0); } to { transform: translateY(-50%); } }
+.wall-col { animation: wall-up 46s linear infinite; }
+.wall-slow { animation-duration: 60s; animation-direction: reverse; }
+.wall-fast { animation-duration: 38s; }
+.wall-mask:hover .wall-col { animation-play-state: paused; }
+.wall-mask { mask-image: linear-gradient(to bottom, transparent, #000 8%, #000 92%, transparent); }
+@media (prefers-reduced-motion: reduce) { .wall-col { animation: none; } }
 
 html, body, #root { height: 100%; }
 body { @apply bg-slate-50 text-slate-800 antialiased; }

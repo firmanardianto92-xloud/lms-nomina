@@ -63,7 +63,8 @@ def export(email: str) -> dict:
 
 if __name__ == "__main__":
     seed(reset=True)
-    data = {"password": DEMO_PASSWORD, "users": {e: export(e) for e in ACCOUNTS}}
+    data = {"password": DEMO_PASSWORD, "users": {e: export(e) for e in ACCOUNTS},
+            "public": {"/public/landing": TestClient(app).get("/api/public/landing").json()}}
     target = sys.argv[1] if len(sys.argv) > 1 else "demo-data.json"
     with open(target, "w") as f:
         json.dump(data, f, ensure_ascii=False, separators=(",", ":"))

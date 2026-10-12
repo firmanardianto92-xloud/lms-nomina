@@ -270,3 +270,15 @@ def test_udemy_xapi_webhook_completes_course(monkeypatch):
     lukman = login("lukman@nomina.id")
     enr = next(e for e in lukman.get("/api/enrollments").json() if e["course"]["id"] == course["id"])
     assert enr["status"] == "completed" and enr["hours_earned"] == course["duration_hours"] == 22
+
+
+def test_public_landing_needs_no_login_and_hides_full_names():
+    c = TestClient(app)
+    r = c.get("/api/public/landing")
+    assert r.status_code == 200
+    d = r.json()
+    assert d["stats"]["courses"] >= 20 and d["stats"]["learners"] >= 15
+    assert len(d["featured"]) == 6 and len(d["highlights"]) > 0
+    for h in d["highlights"]:
+        assert h["name"].endswith(".") or " " not in h["name"]
+        assert "email" not in h

@@ -24,6 +24,7 @@ export async function demoRequest(method, path, body, ApiError) {
     current = null;
     return { ok: true };
   }
+  if (path.startsWith("/public/")) return structuredClone(data.public?.[path] ?? {});
   if (!current) throw new ApiError(401, { detail: "Belum masuk" });
 
   if (method !== "GET") {

@@ -1,7 +1,8 @@
-import { Navigate, Route, Routes } from "react-router-dom";
+import { Navigate, Route, Routes, useLocation } from "react-router-dom";
 import Layout from "@/components/Layout";
 import { Spinner } from "@/components/ui";
 import { useMe } from "@/lib/session";
+import Landing from "@/pages/Landing";
 import Login from "@/pages/Login";
 import Dashboard from "@/pages/Dashboard";
 import Catalog from "@/pages/Catalog";
@@ -21,8 +22,10 @@ import AdminUsers from "@/pages/AdminUsers";
 
 function Protected({ roles, children }) {
   const { data: me, isLoading } = useMe();
+  const { pathname } = useLocation();
   if (isLoading) return <Spinner />;
-  if (!me) return <Navigate to="/login" replace />;
+  // Pengunjung yang belum login: beranda publik untuk "/", halaman login untuk halaman lain.
+  if (!me) return <Navigate to={pathname === "/" ? "/beranda" : "/login"} replace />;
   if (roles && !roles.includes(me.role)) return <Navigate to="/" replace />;
   return children;
 }
@@ -30,6 +33,7 @@ function Protected({ roles, children }) {
 export default function App() {
   return (
     <Routes>
+      <Route path="/beranda" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/sertifikat/:id/cetak" element={<Protected><CertificateView /></Protected>} />
       <Route element={<Protected><Layout /></Protected>}>
